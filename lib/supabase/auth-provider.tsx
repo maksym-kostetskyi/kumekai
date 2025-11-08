@@ -20,14 +20,30 @@ export default function SupabaseProvider({
 }) {
   const [supabase] = useState(() => createClient());
   const [session, setSession] = useState<Session | null>(null);
-
   useEffect(() => {
-    // 1. Отримати початкову сесію
+    // 1. Отримати початкову сесію АБО СТВОРИТИ анонімну
     const getInitialSession = async () => {
       const {
         data: { session },
       } = await supabase.auth.getSession();
-      setSession(session);
+
+      if (session) {
+        setSession(session);
+      } else {
+        // Сесії немає. Створюємо нову анонімну сесію.
+        console.log("No session found, signing in anonymously...");
+        const { data: newSessionData, error } =
+          await supabase.auth.signInAnonymously();
+        if (error) {
+          console.error("Error signing in anonymously:", error);
+        } else if (newSessionData) {
+          setSession(newSessionData.session);
+          console.log(
+            "Anonymous session created:",
+            newSessionData.session?.user.id
+          );
+        }
+      }
     };
 
     getInitialSession();
@@ -39,11 +55,11 @@ export default function SupabaseProvider({
       setSession(session);
     });
 
-    // 3. Відписатися від слухача при "розмонтуванні" компонента
+    // 3. Відписатися
     return () => {
       subscription?.unsubscribe();
     };
-  }, [supabase]);
+  }, [supabase]); // Залежність "supabase" залишається
 
   return (
     <SupabaseContext.Provider value={{ supabase, session }}>
