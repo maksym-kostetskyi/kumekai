@@ -1,9 +1,10 @@
+// proxy.ts (колишній middleware.ts)
 import { NextResponse, type NextRequest } from "next/server";
-import { createServerClient } from "@supabase/ssr";
+import { createServerClient } from "@supabase/ssr"; // <-- Переконайтеся, що цей шлях правильний
 import type { CookieOptions } from "@supabase/ssr";
 
 /**
- * Цей middleware оновлює сесію користувача (cookie)
+ * Цей proxy оновлює сесію користувача (cookie)
  * при кожному запиті до сайту.
  */
 export async function updateSession(request: NextRequest) {
@@ -59,26 +60,16 @@ export async function updateSession(request: NextRequest) {
     }
   );
 
-  // Оновлення сесії юзера (анонімного чи ні)
   await supabase.auth.getSession();
 
   return response;
 }
 
-export async function middleware(request: NextRequest) {
+export async function proxy(request: NextRequest) {
   return await updateSession(request);
 }
 
-// Конфіг, що вказує, на яких шляхах має працювати middleware
+// Конфіг залишається без змін
 export const config = {
-  matcher: [
-    /*
-     * Зіставляти всі шляхи запитів, окрім тих, що починаються з:
-     * - _next/static (статичні файли)
-     * - _next/image (оптимізація зображень)
-     * - favicon.ico (іконка)
-     * Це оптимізує роботу, щоб middleware не запускався на кожне зображення.
-     */
-    "/((?!_next/static|_next/image|favicon.ico).*)",
-  ],
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
 };
